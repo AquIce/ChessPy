@@ -230,20 +230,24 @@ def player_move(color):
 
 	tmp_moves = [i[1] for i in movs]
 	tmp_pieces = [i[0][0][0] if i[0][0][0] != 'P' else '' for i in movs]
-	choice = show_possibilities(tmp_moves, format_coords, tmp_pieces)
+	choice = selector_menu(tmp_moves, format_coords, tmp_pieces)
 
 	global last_move
-	last_move = coords[choice[0]][choice[1]]
+	print('move', movs[choice][1])
+	print('f_coords', movs[choice][0][1])
+	print('piece', movs[choice][0][0])
+	print(coords[movs[choice][0][0]][movs[choice][0][1]])
+	last_move = []
 	opiece = choice[0][0] if choice[0][0] != 'P' else ''
 
 	mvs = get_possible_moves(choice[0], choice[1])
-	final_move = get_possible_moves(choice[0], choice[1])[show_possibilities(
+	final_move = get_possible_moves(choice[0], choice[1])[selector_menu(
 	 mvs, lambda x, y: format_coords(x, y), opiece)]
 
 	move(choice[0], final_move, choice[1])
 
 
-def show_possibilities(opts, format_fn=lambda x, y: x, start_pieces=[]):
+def selector_menu(opts, format_fn=lambda x, y: x, start_pieces=[]):
 	index = 0
 	while True:
 		os.system('clear')

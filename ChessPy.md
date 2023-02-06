@@ -6,6 +6,8 @@
 - [x] Moves working
 - [x] Eliminations working
 - [x] Pawns eliminations
-- [ ] Game ready to play
-- [ ] Last move brilliant
+- [x] Game ready to play
+- [ ] Last move feature
 - [ ] Check(mate)
+- [ ] Fix pawns capture
+- [ ] Pawn promotion

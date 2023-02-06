@@ -52,27 +52,31 @@ def place_pieces():
 			if j != [-1, -1]:
 				game_grid[j[1]][j[0]] = i
 
+def format_grid_piece(piece):
+	if piece[1] == 'w':
+		return piece[0].upper()
+	return piece[0].lower()
 
 def output_grid():
-	white = False
+	white = True
 	place_pieces()
 	for i in range(len(game_grid)):
 		for j in range(len(game_grid[i])):
 			if j == 0:
 				print(8 - i, end=' ')
 			if not white:
-				print(clr.Back.BLACK + clr.Fore.WHITE + f' {game_grid[i][j]} ' +
+				print(clr.Back.BLACK + clr.Fore.WHITE + f' {format_grid_piece(game_grid[i][j])} ' +
 				      clr.Fore.RESET + clr.Back.RESET,
 				      end='')
 			else:
-				print(clr.Back.WHITE + clr.Fore.BLACK + f' {game_grid[i][j]} ' +
+				print(clr.Back.WHITE + clr.Fore.BLACK + f' {format_grid_piece(game_grid[i][j])} ' +
 				      clr.Fore.RESET + clr.Back.RESET,
 				      end='')
 			if j != 7:
 				white = not white
 		print()
 
-	print('   a   b   c   d   e   f   g   h')
+	print('   a  b  c  d  e  f  g  h')
 
 
 def is_occuped(coords_to_check):
@@ -179,32 +183,43 @@ def get_point_piece(point, strmode=False):
 
 
 def get_possible_moves(piece, index=0):
+	el = False
+	to_rem_pawn = []
 	without_collisions = []
 	co = coords[piece][index]
 	# print(f'Coordinates : {co}\n')
 	if piece == 'Pw':
+		if is_occuped([co[0], co[1] - 1]):
+			to_rem_pawn = [co[0], co[1] - 1]
 		if co[1] == 6:
 			moves['P'] = ((0, -1), (0, -2))
 			# without_collisions.extend([co[0] - 2, co[1]])
 		else:
 			moves['P'] = ((0, -1), )
-		without_collisions.extend(
-		 [[co[0] + i, co[1] - 1] for i in [1, -1]
-		  if [co[0] + i, co[1] -
-		      1] not in get_free_points() and get_point_color([co[0] + i, co[1] -
-		                                                       1]) == 'b'])
+
+		ext = [[co[0] + i, co[1] - 1] for i in [1, -1] if [co[0] + i, co[1] - 1] not in get_free_points() and get_point_color([co[0] + i, co[1] - 1]) == 'b']
+		
+		if ext != []:
+			el = True
+			without_collisions.extend(ext)
+			
 	elif piece == 'Pb':
+		if is_occuped([co[0], co[1] + 1]):
+			to_rem_pawn = [co[0], co[1] + 1]
 		if co[1] == 1:
 			moves['P'] = ((0, 1), (0, 2))
-		without_collisions.extend(
-		 [[co[0] + i, co[1] + 1] for i in [1, -1]
-		  if [co[0] + i, co[1] +
-		      1] not in get_free_points() and get_point_color([co[0] + i, co[1] +
-		                                                       1]) == 'w'])
+			
+		ext = [[co[0] + i, co[1] + 1] for i in [1, -1] if [co[0] + i, co[1] + 1] not in get_free_points() and get_point_color([co[0] + i, co[1] + 1]) == 'w']
+		
+		if ext != []:
+			el = True
+			without_collisions.extend(ext)
+			
+	without_collisions.extend([[co[0] + i, co[1] + j] for (i, j) in moves[piece[0]] if co[0] + i >= 0 and co[0] + i < 8 and co[1] + j >= 0 and co[1] + j < 8])
 
-	without_collisions.extend(
-	 [[co[0] + i, co[1] + j] for (i, j) in moves[piece[0]]
-	  if co[0] + i >= 0 and co[0] + i < 8 and co[1] + j >= 0 and co[1] + j < 8])
+	if to_rem_pawn != []:
+		without_collisions.remove(to_rem_pawn)
+		to_rem_pawn = []
 	moves['P'] = ((0, 1), )
 	# print(f'Without collisions : {without_collisions}\n')
 	ok = [i for i in without_collisions if check_collisions(co, i, piece)[0]]
@@ -218,6 +233,7 @@ def move(piece, coos: list, index=0):
 	coords[piece][index] = coos
 	# print(coords)
 
+
 def player_move(color):
 	movs = []
 	for piece in coords.keys():
@@ -229,22 +245,21 @@ def player_move(color):
 							movs.append(((piece, f_coords), i))
 
 	tmp_moves = [i[1] for i in movs]
-	tmp_pieces = [i[0][0][0] if i[0][0][0] != 'P' else '' for i in movs]
+	takes = [True if is_occuped(i) else False for i in tmp_moves]
+	tmp_pieces = [i[0][0][0] for i in movs]
+	for i in range(len(tmp_pieces)):
+		if tmp_pieces[i].startswith('P'):
+			tmp_alpha = 'abcdefgh'
+			tmp_pieces[i] = tmp_alpha[movs[tmp_pieces[i]][0][0][0]] + tmp_pieces[i].replace('P', '') if takes[i] else tmp_pieces[i].replace('P', '')
 	choice = selector_menu(tmp_moves, format_coords, tmp_pieces)
 
 	global last_move
-	print('move', movs[choice][1])
+	'''print('move', movs[choice][1])
 	print('f_coords', movs[choice][0][1])
-	print('piece', movs[choice][0][0])
-	print(coords[movs[choice][0][0]][movs[choice][0][1]])
+	print('piece', movs[choice][0][0])'''
 	last_move = []
-	opiece = choice[0][0] if choice[0][0] != 'P' else ''
 
-	mvs = get_possible_moves(choice[0], choice[1])
-	final_move = get_possible_moves(choice[0], choice[1])[selector_menu(
-	 mvs, lambda x, y: format_coords(x, y), opiece)]
-
-	move(choice[0], final_move, choice[1])
+	move(movs[choice][0][0], movs[choice][1], movs[choice][0][1])
 
 
 def selector_menu(opts, format_fn=lambda x, y: x, start_pieces=[]):
